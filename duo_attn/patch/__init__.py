@@ -51,6 +51,16 @@ def enable_duo_attention_training(
             enable_ulysses_attention=enable_ulysses_attention,
             streaming_attn_implementation=streaming_attn_implementation,
         )
+    elif "Qwen" in model.config.model_type or "mixtral" in model.config.model_type:
+        enable_mistral_duo_attention_training(
+            model,
+            sink_size,
+            recent_size,
+            max_length,
+            initial_value=initial_value,
+            enable_ulysses_attention=enable_ulysses_attention,
+            streaming_attn_implementation=streaming_attn_implementation,
+        )
     else:
         raise ValueError(f"Model type {model.config.model_type} not supported")
 
