@@ -14,6 +14,14 @@ from .mistral import (
     map_mistral_full_attention_heads,
 )
 
+from .qwen2 import (
+    enable_qwen2_duo_attention_training,
+    enable_mistral_duo_attention_eval,
+    get_mistral_full_attention_heads,
+    set_mistral_full_attention_heads,
+    map_mistral_full_attention_heads,
+)
+
 import numpy as np
 import os
 import torch
@@ -51,8 +59,8 @@ def enable_duo_attention_training(
             enable_ulysses_attention=enable_ulysses_attention,
             streaming_attn_implementation=streaming_attn_implementation,
         )
-    elif "Qwen" in model.config.model_type or "mixtral" in model.config.model_type:
-        enable_mistral_duo_attention_training(
+    elif "Qwen" in model.config.model_type:
+        enable_qwen2_duo_attention_training(
             model,
             sink_size,
             recent_size,

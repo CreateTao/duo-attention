@@ -2,6 +2,7 @@ from typing import Optional, Tuple
 
 import torch
 import torch.functional as F
+from transformers import Qwen2ForCausalLM
 
 from transformers.models.llama.modeling_llama import (
     LlamaForCausalLM,
@@ -766,6 +767,27 @@ def old_mistral_decoder_layer_forward(
 
 def enable_tuple_kv_cache_for_mistral(model: MistralForCausalLM):
     print("Enabling tuple KV cache for Mistral")
+    model.model._prepare_decoder_attention_mask = lambda *args, **kwargs: None
+    model.model.forward = types.MethodType(old_mistral_model_forward, model.model)
+    for idx in range(len(model.model.layers)):
+        model.model.layers[idx].forward = types.MethodType(
+            old_mistral_decoder_layer_forward, model.model.layers[idx]
+        )
+        model.model.layers[idx].self_attn.forward = types.MethodType(
+            old_flash_attention_2_forward, model.model.layers[idx].self_attn
+        )
+        model.model.layers[idx].self_attn._upad_input = types.MethodType(
+            _upad_input, model.model.layers[idx].self_attn
+        )
+        model.model.layers[idx].self_attn._flash_attention_forward = types.MethodType(
+            _flash_attention_forward, model.model.layers[idx].self_attn
+        )
+    model.forward = types.MethodType(old_mistral_for_causal_lm_forward, model)
+
+
+# 使用flash_attn替换Qwen2原模型的forward，attn等模块
+def enable_tuple_kv_cache_for_qwen2(model: Qwen2ForCausalLM):
+    print("Enabling tuple KV cache for Qwen2")
     model.model._prepare_decoder_attention_mask = lambda *args, **kwargs: None
     model.model.forward = types.MethodType(old_mistral_model_forward, model.model)
     for idx in range(len(model.model.layers)):
