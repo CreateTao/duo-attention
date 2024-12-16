@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="duo-attn" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="duo-attn" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="duo_demo" project-jdk-type="Python SDK" />
 </project>

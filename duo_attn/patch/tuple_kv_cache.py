@@ -21,6 +21,8 @@ import types
 from flash_attn import flash_attn_func, flash_attn_varlen_func
 from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input
 
+from duo_attn.patch.qwen2 import old_qwen2_model_forward, old_qwen2_decoder_layer_forward
+
 
 def _get_unpad_data(padding_mask):
     seqlens_in_batch = padding_mask.sum(dim=-1, dtype=torch.int32)
@@ -788,12 +790,18 @@ def enable_tuple_kv_cache_for_mistral(model: MistralForCausalLM):
 # 使用flash_attn替换Qwen2原模型的forward，attn等模块
 def enable_tuple_kv_cache_for_qwen2(model: Qwen2ForCausalLM):
     print("Enabling tuple KV cache for Qwen2")
+    # 不开启decoder_attention_mask
     model.model._prepare_decoder_attention_mask = lambda *args, **kwargs: None
-    model.model.forward = types.MethodType(old_mistral_model_forward, model.model)
+    # 替换模型的forward
+    model.model.forward = types.MethodType(old_qwen2_model_forward, model.model)
+
+
     for idx in range(len(model.model.layers)):
+        # 整个单层内部，包含层归一化，MLP非线性变换，残差连接等
         model.model.layers[idx].forward = types.MethodType(
-            old_mistral_decoder_layer_forward, model.model.layers[idx]
+            old_qwen2_decoder_layer_forward, model.model.layers[idx]
         )
+        # 仅处理自注意力部分，输入为 hidden_states 和其他参数，输出为自注意力处理后的 hidden_states
         model.model.layers[idx].self_attn.forward = types.MethodType(
             old_flash_attention_2_forward, model.model.layers[idx].self_attn
         )
